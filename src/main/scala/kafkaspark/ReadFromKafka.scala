@@ -1,6 +1,6 @@
 package kafkaspark
-import org.apache.spark.sql.functions._
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 object ReadFromKafka {
   def main(args: Array[String]): Unit = {
@@ -17,7 +17,7 @@ object ReadFromKafka {
     )
 
     // Define the Kafka topic to subscribe to
-    val topic = "trainarrival"
+    val topic = "arrivaldata"
 
     // Define the schema for the JSON messages
     val schema = StructType(Seq(
@@ -25,7 +25,15 @@ object ReadFromKafka {
       StructField("stationName", StringType, nullable = true),
       StructField("lineName", StringType, nullable = true),
       StructField("towards", StringType, nullable = true),
-      StructField("expectedArrival", StringType, nullable = true)
+      StructField("expectedArrival", StringType, nullable = true),
+      StructField("vehicleId", StringType, nullable = true),
+      StructField("platformName", StringType, nullable = true),
+      StructField("direction", StringType, nullable = true),
+      StructField("destinationName", StringType, nullable = true),
+      StructField("timestamp", StringType, nullable = true),
+      StructField("timeToStation", StringType, nullable = true),
+      StructField("currentLocation", StringType, nullable = true),
+      StructField("timeToLive", StringType, nullable = true)
     ))
 
     // Read the JSON messages from Kafka as a DataFrame

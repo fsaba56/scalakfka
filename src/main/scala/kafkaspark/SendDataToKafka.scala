@@ -18,12 +18,12 @@ object SendDataToKafka {
 
       // select the columns you want to include in the message
 
-      val messageDF = dfFromText.select($"id", $"stationName", $"lineName", $"towards", $"expectedArrival")
-
-      //dfFromText.select(col("$type")).show()
+      val messageDF = dfFromText.select($"id", $"stationName", $"lineName", $"towards",
+        $"expectedArrival",$"vehicleId",$"platformName",$"direction",$"destinationName",
+        $"timestamp",$"timeToStation", $"currentLocation",$"timeToLive")
 
       val kafkaServer: String = "ip-172-31-3-80.eu-west-2.compute.internal:9092"
-      val topicSampleName: String = "trainarrival"
+      val topicSampleName: String = "arrivaldata"
 
       messageDF.selectExpr("CAST(id AS STRING) AS key", "to_json(struct(*)) AS value").selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)").write.format("kafka").option("kafka.bootstrap.servers", kafkaServer).option("topic", topicSampleName).save()
 
