@@ -27,7 +27,7 @@ object SendDataToKafka {
 
       messageDF.selectExpr("CAST(id AS STRING) AS key", "to_json(struct(*)) AS value").selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)").write.format("kafka").option("kafka.bootstrap.servers", kafkaServer).option("topic", topicSampleName).save()
 
-      Thread.sleep(10000) // wait for 10 seconds before making the next call
+      Thread.sleep(3600000) // wait for 10 seconds before making the next call
     }
   }
 
