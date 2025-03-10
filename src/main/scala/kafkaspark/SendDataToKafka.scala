@@ -22,8 +22,8 @@ object SendDataToKafka {
         $"expectedArrival",$"vehicleId",$"platformName",$"direction",$"destinationName",
         $"timestamp",$"timeToStation", $"currentLocation",$"timeToLive")
 
-      val kafkaServer: String = "ip-172-31-3-80.eu-west-2.compute.internal:9092"
-      val topicSampleName: String = "arrivaldata"
+      val kafkaServer: String = "ip-172-31-8-235.eu-west-2.compute.internal:9092,ip-172-31-14-3.eu-west-2.compute.internal:9092"
+      val topicSampleName: String = "uttam_tfl"
 
       messageDF.selectExpr("CAST(id AS STRING) AS key", "to_json(struct(*)) AS value").selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)").write.format("kafka").option("kafka.bootstrap.servers", kafkaServer).option("topic", topicSampleName).save()
 println("message is loaded to kafka topic")
