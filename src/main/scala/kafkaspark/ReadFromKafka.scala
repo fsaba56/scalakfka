@@ -38,8 +38,9 @@ object ReadFromKafka {
     ))
 
     // Read the JSON messages from Kafka as a DataFrame
-    val df = spark.readStream.format("kafka").option("kafka.bootstrap.servers", " ip-172-31-8-235.eu-west-2.compute.internal:9092,ip-172-31-14-3.eu-west-2.compute.internal:9092").option("subscribe", topic).option("startingOffsets", "earliest").load().select(from_json(col("value").cast("string"), schema).as("data")).selectExpr("data.*")
-     val partitionFilteredDF = df.filter(col("partition") === partitionId)
+    val df = spark.readStream.format("kafka").option("kafka.bootstrap.servers", " ip-172-31-8-235.eu-west-2.compute.internal:9092,ip-172-31-14-3.eu-west-2.compute.internal:9092").option("subscribe", topic).option("startingOffsets", "latest").load().select(from_json(col("value").cast("string"), schema).as("data")).selectExpr("data.*")
+    df.select("partition", "offset", "value").show()
+    val partitionFilteredDF = df.filter(col("partition") === partitionId)
     // Write the DataFrame as CSV files to HDFS
     //df.writeStream.format("csv").option("checkpointLocation", "/tmp/jenkins/kafka/trainarrival/checkpoint").option("path", "/tmp/jenkins/kafka/trainarrival/data").start().awaitTermination()
     partitionFilteredDF.writeStream.format("csv").option("checkpointLocation", "/tmp/jenkins/kafka/trainarrival/checkpoint").option("path", "/tmp/jenkins/kafka/trainarrival/data").start().awaitTermination()
