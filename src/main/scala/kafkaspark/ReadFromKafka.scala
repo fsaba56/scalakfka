@@ -1,4 +1,5 @@
 package kafkaspark
+
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
@@ -9,9 +10,7 @@ object ReadFromKafka {
 
     // Define the Kafka parameters
     val kafkaParams = Map[String, Object](
-      "bootstrap.servers" -> "ip-172-31-3-80.eu-west-2.compute.internal:9092",
-      "key.deserializer" -> "org.apache.kafka.common.serialization.StringDeserializer",
-      "value.deserializer" -> "org.apache.kafka.common.serialization.StringDeserializer",
+      "bootstrap.servers" -> "ip-172-31-3-80.eu-west-2.compute.internal:9092,ip-172-31-14-3.eu-west-2.compute.internal:9092",
       "group.id" -> "group1",
       "auto.offset.reset" -> "earliest",
       "enable.auto.commit" -> (false: java.lang.Boolean)
@@ -19,7 +18,6 @@ object ReadFromKafka {
 
     // Define the Kafka topic to subscribe to
     val topic = "uttam_tfl"
-    val partitionId = 0 // Optional, if you want to filter by partition
 
     // Define the schema for the JSON messages
     val schema = StructType(Seq(
@@ -38,25 +36,25 @@ object ReadFromKafka {
       StructField("timeToLive", StringType, nullable = true)
     ))
 
-    // Read the JSON messages from Kafka as a DataFrame and include partition info
-    val df = spark.readStream
+    // Read Kafka stream, which will give us a "value" column of type bytes
+    val kafkaStream = spark.readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", "ip-172-31-8-235.eu-west-2.compute.internal:9092,ip-172-31-14-3.eu-west-2.compute.internal:9092")
       .option("subscribe", topic)
-      .option("startingOffsets", "latest")
+      .option("startingOffsets", "earliest")
       .load()
-      .selectExpr("partition", "offset", "value") // Select partition, offset, and value columns
-      .select(from_json(col("value").cast("string"), schema).as("data")) // Parse the JSON in the 'value' field
-      .selectExpr("data.*") // Flatten the resulting structure
 
-    // Optionally filter by partition if needed
-    val partitionFilteredDF = df.filter(col("partition") === partitionId)
+    // Extract the "value" field from Kafka and parse the JSON data
+    val df = kafkaStream.selectExpr("CAST(value AS STRING)") // Convert byte array to string
+      .select(from_json(col("value"), schema).as("data")) // Parse JSON using the schema
+      .select("data.*") // Flatten the nested data structure
 
-    // Write the DataFrame as CSV files to HDFS
-    partitionFilteredDF.writeStream
-      .format("csv")
+    // Write the stream data to a different output format (parquet for testing)
+    df.writeStream
+      .format("parquet")
       .option("checkpointLocation", "/tmp/jenkins/kafka/trainarrival/checkpoint")
       .option("path", "/tmp/jenkins/kafka/trainarrival/data")
+      .outputMode("append")
       .start()
       .awaitTermination()
   }
