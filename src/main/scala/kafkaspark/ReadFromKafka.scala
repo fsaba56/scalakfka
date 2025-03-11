@@ -26,7 +26,7 @@ object ReadFromKafka {
       .format("kafka")
       .option("kafka.bootstrap.servers", "ip-172-31-8-235.eu-west-2.compute.internal:9092,ip-172-31-14-3.eu-west-2.compute.internal:9092")
       .option("assign", s"""[{"topic":"$topic", "partition":$partitionId}]""") // Use "assign" for specific partition
-      .option("startingOffsets", "earliest")  // Change to "latest" if needed
+      .option("startingOffsets", "latest")  // Change to "latest" if needed
       .load()
       .selectExpr("CAST(value AS STRING)") // Read the value column as a String
 
