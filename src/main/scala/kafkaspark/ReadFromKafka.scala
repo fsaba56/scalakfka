@@ -17,8 +17,7 @@ object ReadFromKafka {
     )
 
     // Define the Kafka topic to subscribe to
-    val topic = "uttam_tfl"
-    val partitionId = 0 
+    val topic = "arrivaldata"
 
     // Define the schema for the JSON messages
     val schema = StructType(Seq(
