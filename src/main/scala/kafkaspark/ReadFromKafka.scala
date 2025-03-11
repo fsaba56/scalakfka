@@ -1,34 +1,24 @@
+package kafkaspark
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
-import org.apache.kafka.common.TopicPartition
-
 object ReadFromKafka {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().appName("KafkaToJson").master("local[*]").getOrCreate()
 
     // Define the Kafka parameters
     val kafkaParams = Map[String, Object](
-      "bootstrap.servers" -> "ip-172-31-3-80.eu-west-2.compute.internal:9092,ip-172-31-14-3.eu-west-2.compute.internal:9092",
+      "bootstrap.servers" -> "ip-172-31-3-80.eu-west-2.compute.internal:9092",
+      "key.deserializer" -> "org.apache.kafka.common.serialization.StringDeserializer",
+      "value.deserializer" -> "org.apache.kafka.common.serialization.StringDeserializer",
       "group.id" -> "group1",
-      "auto.offset.reset" -> "earliest",  // or "latest" if you want to get new messages
+      "auto.offset.reset" -> "earliest",
       "enable.auto.commit" -> (false: java.lang.Boolean)
     )
 
+    // Define the Kafka topic to subscribe to
     val topic = "uttam_tfl"
-    val partitionId = 0 // Partition to consume
-    
-    // Define the Kafka topic and partition to consume from
-    val topicPartition = new TopicPartition(topic, partitionId)
-
-    // Read data from Kafka, specify the topic and partition explicitly
-    val df = spark.readStream
-      .format("kafka")
-      .option("kafka.bootstrap.servers", "ip-172-31-8-235.eu-west-2.compute.internal:9092,ip-172-31-14-3.eu-west-2.compute.internal:9092")
-      .option("assign", s"""[{"topic":"$topic", "partition":$partitionId}]""") // Use "assign" for specific partition
-      .option("startingOffsets", "earliest")  // Change to "latest" if needed
-      .load()
-      .selectExpr("CAST(value AS STRING)") // Read the value column as a String
+    val partitionId = 0 
 
     // Define the schema for the JSON messages
     val schema = StructType(Seq(
@@ -47,14 +37,10 @@ object ReadFromKafka {
       StructField("timeToLive", StringType, nullable = true)
     ))
 
-    // Parse JSON and flatten the structure
-    val parsedDF = df.select(from_json(col("value"), schema).as("data")).selectExpr("data.*")
-
-    // Write to console for debugging
-    parsedDF.writeStream
-      .format("console")
-      .outputMode("append")
-      .start()
-      .awaitTermination()
+    // Read the JSON messages from Kafka as a DataFrame
+    val df = spark.readStream.format("kafka").option("kafka.bootstrap.servers", " ip-172-31-8-235.eu-west-2.compute.internal:9092,ip-172-31-14-3.eu-west-2.compute.internal:9092").option("subscribe", topic).option("startingOffsets", "latest").load().select(from_json(col("value").cast("string"), schema).as("data")).selectExpr("data.*")
+    // Write the DataFrame as CSV files to HDFS
+    df.writeStream.format("csv").option("checkpointLocation", "/tmp/jenkins/kafka/trainarrival/checkpoint").option("path", "/tmp/jenkins/kafka/trainarrival/data").start().awaitTermination()
   }
+
 }
