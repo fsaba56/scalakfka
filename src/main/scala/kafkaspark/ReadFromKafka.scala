@@ -1,5 +1,3 @@
-package kafkaspark
-
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
@@ -13,7 +11,7 @@ object ReadFromKafka {
     val kafkaParams = Map[String, Object](
       "bootstrap.servers" -> "ip-172-31-3-80.eu-west-2.compute.internal:9092,ip-172-31-14-3.eu-west-2.compute.internal:9092",
       "group.id" -> "group1",
-      "auto.offset.reset" -> "earliest",
+      "auto.offset.reset" -> "earliest",  // or "latest" if you want to get new messages
       "enable.auto.commit" -> (false: java.lang.Boolean)
     )
 
@@ -23,15 +21,14 @@ object ReadFromKafka {
     // Define the Kafka topic and partition to consume from
     val topicPartition = new TopicPartition(topic, partitionId)
 
-    // Read data from Kafka, specifying partition
+    // Read data from Kafka, specify the topic and partition explicitly
     val df = spark.readStream
       .format("kafka")
       .option("kafka.bootstrap.servers", "ip-172-31-8-235.eu-west-2.compute.internal:9092,ip-172-31-14-3.eu-west-2.compute.internal:9092")
-      .option("subscribe", topic)
-      .option("startingOffsets", "earliest")
+      .option("assign", s"""[{"topic":"$topic", "partition":$partitionId}]""") // Use "assign" for specific partition
+      .option("startingOffsets", "earliest")  // Change to "latest" if needed
       .load()
-      .filter(col("partition") === partitionId) // Filter by partition
-      .selectExpr("CAST(value AS STRING)")
+      .selectExpr("CAST(value AS STRING)") // Read the value column as a String
 
     // Define the schema for the JSON messages
     val schema = StructType(Seq(
