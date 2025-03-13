@@ -30,7 +30,7 @@ object SendDataToKafka {
       )
 
       val kafkaServer: String = "ip-172-31-8-235.eu-west-2.compute.internal:9092,ip-172-31-14-3.eu-west-2.compute.internal:9092"
-      val topicSampleName: String = "arrivaldata_New"
+      val topicSampleName: String = "tfl_underground_Details"
 
       messageDF.selectExpr("CAST(id AS STRING) AS key", "to_json(struct(*)) AS value").selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)").write.format("kafka").option("kafka.bootstrap.servers", kafkaServer).option("topic", topicSampleName).save()
 println("message is loaded to kafka topic")
