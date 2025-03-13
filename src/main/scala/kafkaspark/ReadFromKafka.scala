@@ -17,29 +17,24 @@ object ReadFromKafka {
     )
 
     // Define the Kafka topic to subscribe to
-    val topic = "arrivaldata1"
+    val topic = "tfl_underground_Details"
 
-    // Define the schema for the JSON messages
+    // Define the schema for the JSON message
     val schema = StructType(Seq(
       StructField("id", StringType, nullable = true),
-      StructField("stationName", StringType, nullable = true),
-      StructField("lineName", StringType, nullable = true),
-      StructField("towards", StringType, nullable = true),
-      StructField("expectedArrival", StringType, nullable = true),
-      StructField("vehicleId", StringType, nullable = true),
-      StructField("platformName", StringType, nullable = true),
-      StructField("direction", StringType, nullable = true),
-      StructField("destinationName", StringType, nullable = true),
-      StructField("timestamp", StringType, nullable = true),
-      StructField("timeToStation", StringType, nullable = true),
-      StructField("currentLocation", StringType, nullable = true),
-      StructField("timeToLive", StringType, nullable = true)
+      StructField("name", StringType, nullable = true),
+      StructField("modeName", StringType, nullable = true),
+      StructField("lineStatus", StringType, nullable = true),
+      StructField("statusSeverity", StringType, nullable = true),
+      StructField("created", StringType, nullable = true),
+      StructField("modified", StringType, nullable = true),
+      StructField("serviceType", StringType, nullable = true)
     ))
 
     // Read the JSON messages from Kafka as a DataFrame
     val df = spark.readStream.format("kafka").option("kafka.bootstrap.servers", " ip-172-31-8-235.eu-west-2.compute.internal:9092,ip-172-31-14-3.eu-west-2.compute.internal:9092").option("subscribe", topic).option("startingOffsets", "latest").load().select(from_json(col("value").cast("string"), schema).as("data")).selectExpr("data.*")
     // Write the DataFrame as CSV files to HDFS
-    df.writeStream.format("csv").option("checkpointLocation", "/tmp/jenkins/kafka/trainarrival/checkpoint").option("path", "/tmp/jenkins/kafka/trainarrival/data").start().awaitTermination()
+    //df.writeStream.format("csv").option("checkpointLocation", "/tmp/jenkins/kafka/trainarrival/checkpoint").option("path", "/tmp/jenkins/kafka/trainarrival/data").start().awaitTermination()
   }
 
 }
