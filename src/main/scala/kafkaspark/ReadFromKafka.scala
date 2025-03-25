@@ -2,7 +2,7 @@ package kafkaspark
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
-object readkafka {
+object ReadFromKafka {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().appName("KafkaToJson").master("local[*]").getOrCreate()
 
@@ -17,29 +17,21 @@ object readkafka {
     )
 
     // Define the Kafka topic to subscribe to
-    val topic = "arrivaldata1"
+    val topic = "tfl_underground_Details"
 
     // Define the schema for the JSON messages
     val schema = StructType(Seq(
-      StructField("id", StringType, nullable = true),
-      StructField("stationName", StringType, nullable = true),
-      StructField("lineName", StringType, nullable = true),
-      StructField("towards", StringType, nullable = true),
-      StructField("expectedArrival", StringType, nullable = true),
-      StructField("vehicleId", StringType, nullable = true),
-      StructField("platformName", StringType, nullable = true),
-      StructField("direction", StringType, nullable = true),
-      StructField("destinationName", StringType, nullable = true),
-      StructField("timestamp", StringType, nullable = true),
-      StructField("timeToStation", StringType, nullable = true),
-      StructField("currentLocation", StringType, nullable = true),
-      StructField("timeToLive", StringType, nullable = true)
-    ))
+      StructField("name", StringType, nullable = true),
+      StructField("lineStatus", StringType, nullable = true),
+      StructField("timedetails", TimestampType, nullable = false) // New column
+                ))
 
     // Read the JSON messages from Kafka as a DataFrame
     val df = spark.readStream.format("kafka").option("kafka.bootstrap.servers", " ip-172-31-8-235.eu-west-2.compute.internal:9092,ip-172-31-14-3.eu-west-2.compute.internal:9092").option("subscribe", topic).option("startingOffsets", "latest").load().select(from_json(col("value").cast("string"), schema).as("data")).selectExpr("data.*")
+    // Add the current timestamp column when reading the DataFrame
+       val df1 = df.withColumn("timedetails", current_timestamp())
     // Write the DataFrame as CSV files to HDFS
-    df.writeStream.format("csv").option("checkpointLocation", "/tmp/jenkins/kafka/trainarrival/checkpoint").option("path", "/tmp/jenkins/kafka/trainarrival/data").start().awaitTermination()
+        df1.writeStream.format("csv").option("checkpointLocation", "/tmp/jenkins/kafka/tfl_underground/checkpoint").option("path", "/tmp/jenkins/kafka/tfl_underground/data").start().awaitTermination()
   }
 
 }
